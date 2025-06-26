@@ -1,0 +1,51 @@
+/* frontend/style.css */
+
+/* Custom styles not covered by Tailwind CSS utilities */
+
+/* Enhance button disabled state */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Base styles for the transcript container - Tailwind is mostly used in HTML */
+.transcript-container {
+    /* Using Tailwind for most, but ensuring fallback and basic structure */
+    display: block;
+    width: 100%;
+}
+
+/* Optional: Add custom animations or specific overrides if needed */
+/* Example for a custom pulse animation if Tailwind's animate-pulse is not enough */
+/* frontend/style.css */
+
+/* Custom styles not covered by Tailwind CSS utilities */
+
+/* Enhance button disabled state */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Base styles for the transcript container - Tailwind is mostly used in HTML */
+.transcript-container {
+    /* Using Tailwind for most, but ensuring fallback and basic structure */
+    display: block;
+    width: 100%;
+}
+
+/* Optional: Add custom animations or specific overrides if needed */
+/* Example for a custom pulse animation if Tailwind's animate-pulse is not enough */
+
+@keyframes custom-pulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+.custom-pulse-animation {
+    animation: custom-pulse 1.5s infinite;
+}
+

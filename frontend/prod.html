@@ -1,0 +1,238 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Speech-to-Text</title>
+    <!-- Link to the custom stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Load Tailwind CSS from CDN for utility classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Define custom font using @import or @font-face */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-button.active {
+            @apply bg-indigo-600 text-white shadow-md;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-500 to-purple-600 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-3xl w-full">
+        <!-- Title Section -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600 mb-2">
+                🎤 Hybrid Speech-to-Text
+            </h1>
+            <p class="text-gray-600 text-lg">Real-time Browser API + Offline Vosk Model</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="flex justify-center mb-8 bg-gray-100 p-2 rounded-xl shadow-inner">
+            <button class="tab-button flex-1 py-2 px-4 rounded-lg font-semibold text-gray-700 hover:bg-gray-200 transition-colors duration-200 active" data-tab="realtime">🌐 Real-time (Browser)</button>
+            <button class="tab-button flex-1 py-2 px-4 rounded-lg font-semibold text-gray-700 hover:bg-gray-200 transition-colors duration-200" data-tab="offline">📁 Offline (File Upload)</button>
+            <button class="tab-button flex-1 py-2 px-4 rounded-lg font-semibold text-gray-700 hover:bg-gray-200 transition-colors duration-200" data-tab="live-vosk">🎤 Live Mic (Vosk)</button>
+        </div>
+
+        <!-- Tab Content Containers -->
+        <div id="realtime-tab-content" class="tab-content active">
+            <!-- Browser Compatibility Info Card -->
+            <div class="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 rounded-lg mb-6 shadow-sm">
+                <p class="font-semibold mb-2">🌐 Browser Compatibility:</p>
+                <ul class="list-disc list-inside text-sm">
+                    <li>Works best with Chrome/Chromium browsers (recommended).</li>
+                    <li>Microsoft Edge has good support.</li>
+                    <li>Safari has limited support.</li>
+                    <li>Firefox has very limited or no support.</li>
+                    <li><em>Note: HTTPS is required for microphone access in most browsers.</em></li>
+                </ul>
+            </div>
+
+            <!-- Language Selection -->
+            <div class="mb-6">
+                <label for="languageSelect" class="block text-gray-700 text-sm font-bold mb-2">Select Language:</label>
+                <select id="languageSelect" class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    {# Loop through language_options passed from Flask backend #}
+                    {% for code, name in browser_language_options %}
+                        <option value="{{ code }}" {% if code == 'en-US' %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Speech Controls -->
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button id="startBtn" class="flex items-center px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    Start Listening
+                </button>
+                <button id="stopBtn" class="flex items-center px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1" disabled>
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+                    Stop
+                </button>
+                <button id="clearBtn" class="flex items-center px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Clear
+                </button>
+                <button id="copyBtn" class="flex items-center px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v4m0 0v4m0-4h4m-4 0h4m-4 0H4m16 0a2 2 0 012 2v4a2 2 0 01-2 2h-4a2 2 0 01-2-2v-4a2 2 0 012-2h4z"></path></svg>
+                    Copy
+                </button>
+            </div>
+
+            <!-- Status Indicator -->
+            <div id="statusIndicator" class="text-center text-green-600 font-semibold text-lg mb-6 hidden">
+                <span class="animate-pulse">🔴 Listening... Speak now!</span>
+            </div>
+
+            <!-- Transcript Display Area -->
+            <div id="realtime-transcript" class="bg-gray-50 border border-gray-200 rounded-xl p-6 min-h-64 h-auto overflow-y-auto shadow-inner text-gray-800 leading-relaxed text-lg">
+                <span id="final-transcript" class="font-medium">Your speech will appear here...</span>
+                <span id="interim-transcript" class="text-gray-500 text-base"></span>
+            </div>
+        </div>
+
+        <div id="offline-tab-content" class="tab-content">
+            <div class="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 rounded-lg mb-6 shadow-sm">
+                <p class="font-semibold mb-2">📁 Offline Transcription:</p>
+                <p class="text-sm">Upload an audio file (e.g., WAV, MP3) for server-side transcription using the Vosk model. This process is entirely offline once the model is loaded on the server.</p>
+                <p class="text-sm mt-2">To download Vosk models, visit: <a href="https://alphacephei.com/vosk/models" target="_blank" class="text-blue-600 hover:underline">alphacephei.com/vosk/models</a>. Extract the model into your `speech-to-text-app/models/` directory.</p>
+            </div>
+
+            {# Vosk Model Selection Section for Offline Tab #}
+            <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <label for="voskModelSelectOffline" class="block text-gray-700 text-sm font-bold mb-2">Select Vosk Model:</label>
+                <select id="voskModelSelectOffline" class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
+                    {% for model_name in available_vosk_models %}
+                        <option value="{{ model_name }}" {% if loop.first %}selected{% endif %}>{{ model_name }}</option>
+                    {% endfor %}
+                    {% if not available_vosk_models %}
+                        <option value="" disabled selected>No models found. Check 'models/' folder.</option>
+                    {% endif %}
+                </select>
+                <button id="loadVoskModelBtnOffline" class="mt-4 flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Load Vosk Model
+                </button>
+                <p id="voskModelStatusOffline" class="mt-3 text-sm font-medium">
+                    {# Initial status based on backend check #}
+                    {% if vosk_available %}
+                        {% if models_dir_exists %}
+                            {% if vosk_model_loaded %}
+                            <span class="text-green-600">✅ Vosk Model Status: Loaded</span>
+                            {% else %}
+                            <span class="text-yellow-600">⚠️ Vosk Model Status: Not Loaded. Select a model and click 'Load Vosk Model'.</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="text-red-600">❌ 'models/' directory not found. Please create it and place your Vosk models inside.</span>
+                        {% endif %}
+                    {% else %}
+                    <span class="text-red-600">❌ Vosk Library Not Available. Install Vosk (pip install vosk) on your server.</span>
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="mb-6">
+                <label for="audioFile" class="block text-gray-700 text-sm font-bold mb-2">Upload Audio File:</label>
+                <input type="file" id="audioFile" accept="audio/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+            </div>
+
+            <div class="flex justify-center gap-4 mb-8">
+                <button id="transcribeFileBtn" class="flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Transcribe File
+                </button>
+                <button id="clearFileTranscriptBtn" class="flex items-center px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Clear Result
+                </button>
+            </div>
+
+            <!-- File Transcription Result Area -->
+            <div id="file-transcript-result" class="bg-gray-50 border border-gray-200 rounded-xl p-6 min-h-64 h-auto overflow-y-auto shadow-inner text-gray-800 leading-relaxed text-lg">
+                <span id="file-transcript-text" class="font-medium">Upload an audio file and click 'Transcribe File' to see the result here...</span>
+            </div>
+        </div>
+
+        {# Live Vosk Tab Content #}
+        <div id="live-vosk-tab-content" class="tab-content">
+            <div class="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 rounded-lg mb-6 shadow-sm">
+                <p class="font-semibold mb-2">🎤 Live Microphone Transcription (Vosk):</p>
+                <p class="text-sm">Capture live audio from your microphone and transcribe it in real-time using the loaded Vosk model on the server. This is entirely offline once the model is loaded.</p>
+                <p id="liveVoskStatus" class="text-sm mt-2 font-medium">
+                    {# Initial status set by Flask based on live_vosk_model_loaded #}
+                    {% if vosk_available %}
+                        {% if live_vosk_model_loaded %}
+                        <span class="text-green-600">✅ Live Vosk Ready: Model loaded.</span>
+                        {% else %}
+                        <span class="text-yellow-600">⚠️ Live Vosk Not Ready: Please load a model in this tab.</span>
+                        {% endif %}
+                    {% else %}
+                    <span class="text-red-600">❌ Vosk Library Not Available. Install Vosk (pip install vosk) on your server.</span>
+                    {% endif %}
+                </p>
+            </div>
+
+            {# Vosk Model Selection Section for Live Tab #}
+            <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <label for="voskModelSelectLive" class="block text-gray-700 text-sm font-bold mb-2">Select Vosk Model:</label>
+                <select id="voskModelSelectLive" class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
+                    {% for model_name in available_vosk_models %}
+                        <option value="{{ model_name }}" {% if loop.first %}selected{% endif %}>{{ model_name }}</option>
+                    {% endfor %}
+                    {% if not available_vosk_models %}
+                        <option value="" disabled selected>No models found. Check 'models/' folder.</option>
+                    {% endif %}
+                </select>
+                <button id="loadVoskModelBtnLive" class="mt-4 flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Load Vosk Model
+                </button>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button id="startLiveVoskBtn" class="flex items-center px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    Start Live Transcription
+                </button>
+                <button id="stopLiveVoskBtn" class="flex items-center px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1" disabled>
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+                    Stop Live Transcription
+                </button>
+                <button id="clearLiveVoskTranscriptBtn" class="flex items-center px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Clear Result
+                </button>
+            </div>
+
+            <!-- Live Vosk Status Indicator -->
+            <div id="liveVoskListeningIndicator" class="text-center text-green-600 font-semibold text-lg mb-6 hidden">
+                <span class="animate-pulse">🔴 Live Listening... Speak now!</span>
+            </div>
+
+            <!-- Live Vosk Transcript Display Area -->
+            <div id="live-vosk-transcript-result" class="bg-gray-50 border border-gray-200 rounded-xl p-6 min-h-64 h-auto overflow-y-auto shadow-inner text-gray-800 leading-relaxed text-lg">
+                <span id="live-vosk-final-transcript" class="font-medium">Start live transcription to see the result here...</span>
+                <span id="live-vosk-interim-transcript" class="text-gray-500 text-base"></span>
+            </div>
+        </div>
+
+        <!-- Toast Notification Area -->
+        <div id="status-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 transition-opacity duration-300 z-50"></div>
+    </div>
+
+    <!-- Link to the Socket.IO client library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
+    <!-- Link to the JavaScript file -->
+    <script src="script.js"></script>
+</body>
+</html>
